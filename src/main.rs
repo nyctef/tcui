@@ -9,11 +9,27 @@ use std::{
     thread,
     time::Duration,
 };
-use tui::{backend::CrosstermBackend, Terminal};
+use tui::{
+    backend::CrosstermBackend,
+    widgets::{Block, Borders, Widget},
+    Terminal,
+};
 
 enum Event<I> {
     Input(I),
     Tick,
+}
+
+fn draw<B: tui::backend::Backend>(terminal: &mut Terminal<B>) -> Result<(), failure::Error> {
+    terminal.draw(|mut f| {
+        let size = f.size();
+        Block::default()
+            .title("Test block 2")
+            .borders(Borders::ALL)
+            .render(&mut f, size);
+    })?;
+
+    Ok(())
 }
 
 fn main() -> Result<(), failure::Error> {
@@ -46,7 +62,7 @@ fn main() -> Result<(), failure::Error> {
     });
 
     loop {
-        // ui::draw(&mut terminal, &app)?;
+        draw(&mut terminal)?;
         match receive_event.recv()? {
             Event::Input(event) => match event.code {
                 KeyCode::Char('q') => {
