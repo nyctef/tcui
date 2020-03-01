@@ -14,4 +14,4 @@ failure = "0.1.6"
 # http dependencies
 reqwest = { version = "0.10.3", features = ["json"] }
 tokio = { version = "0.2", features = ["full"] }
-serde = "1.0.104"
+serde = { version = "1.0.104", features = ["derive"] }
