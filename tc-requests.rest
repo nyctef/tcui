@@ -1,0 +1,4 @@
+GET https://buildserver.red-gate.com/app/rest/builds/buildType:RedgateChangeControl_OverallBuild,defaultFilter:false,branch:name:add-beta-tag
+Authorization: Bearer {{TEAMCITY_ACCESS_TOKEN}}
+Accept: application/json
+###
