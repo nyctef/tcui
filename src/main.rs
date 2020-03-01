@@ -1,3 +1,5 @@
+mod teamcity;
+
 use crossterm::{
     event::{self, Event as CEvent, KeyCode},
     execute,
