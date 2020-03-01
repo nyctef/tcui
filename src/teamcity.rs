@@ -17,26 +17,22 @@ struct BuildJson {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use failure::Fallible;
     use std::env;
-    use tokio;
 
-    #[tokio::test]
-    async fn can_poke_tc_api() -> Fallible<()> {
+    #[test]
+    fn can_poke_tc_api() {
         let tc_token = env::var("TCUI_TC_TOKEN").expect("TCUI_TC_TOKEN is required");
         let url = format!("{tcRoot}/app/rest/builds/buildType:{buildType},defaultFilter:false,branch:name:{branchName}", tcRoot="https://buildserver.red-gate.com", buildType="RedgateChangeControl_OverallBuild", branchName="add-beta-tag");
-        let latest_build: BuildJson = reqwest::Client::new()
-            .get(&url)
-            .header(
+        let response = ureq::get(&url)
+            .set(
                 "Authorization",
-                format!("Bearer {tc_token}", tc_token = tc_token),
+                &format!("Bearer {tc_token}", tc_token = tc_token),
             )
-            .header("Accept", "application/json")
-            .send()
-            .await?
-            .json()
-            .await?;
+            .set("Accept", "application/json")
+            .call()
+            .into_json()
+            .unwrap();
+        let latest_build = serde_json::from_value::<BuildJson>(response);
         println!("{:#?}", latest_build);
-        Ok(())
     }
 }
