@@ -32,7 +32,7 @@ mod tests {
             .call()
             .into_json()
             .unwrap();
-        let latest_build = serde_json::from_value::<BuildJson>(response);
+        let latest_build = serde_json::from_value::<BuildJson>(response).unwrap();
         println!("{:#?}", latest_build);
     }
 }
