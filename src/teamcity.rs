@@ -19,33 +19,35 @@ pub enum BuildState {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Build {
-    number: String,
-    status: BuildStatus,
-    state: BuildState,
-    web_url: String,
+    pub build_type: BuildType,
+    pub number: String,
+    pub status: BuildStatus,
+    pub state: BuildState,
+    pub web_url: String,
     #[serde(rename = "snapshot-dependencies")]
-    snapshot_dependencies: SnapshotDependencies,
+    pub snapshot_dependencies: SnapshotDependencies,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BuildType {
-    name: String,
+    pub name: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct SnapshotDependencies {
-    build: Vec<BuildDependency>,
+    pub build: Vec<BuildDependency>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BuildDependency {
-    number: String,
-    status: BuildStatus,
-    state: BuildState,
-    percentage_complete: Option<i32>,
-    web_url: String,
+    pub build_type: BuildType,
+    pub number: String,
+    pub status: BuildStatus,
+    pub state: BuildState,
+    pub percentage_complete: Option<i32>,
+    pub web_url: String,
 }
 
 pub fn download_build(

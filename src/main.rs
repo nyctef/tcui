@@ -1,11 +1,14 @@
 mod teamcity;
 
+use teamcity::{download_build, Build};
+
 use crossterm::{
     event::{self, Event as CEvent, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use std::{
+    env,
     io::{stdout, Write},
     sync::mpsc,
     thread,
@@ -28,7 +31,19 @@ enum Event<I> {
     Tick,
 }
 
-fn draw<B: tui::backend::Backend>(terminal: &mut Terminal<B>) -> Result<(), failure::Error> {
+fn build_gauge(build: &Build) -> Gauge {
+    Gauge::default()
+        // todo: put title to left of progress bar?
+        .block(Block::default().title(&build.build_type.name))
+        .label("doing ok")
+        .style(Style::default().fg(Color::Green).bg(Color::DarkGray))
+        .percent(25)
+}
+
+fn draw<B: tui::backend::Backend>(
+    terminal: &mut Terminal<B>,
+    build: &Build,
+) -> Result<(), failure::Error> {
     terminal.draw(|mut f| {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -36,12 +51,7 @@ fn draw<B: tui::backend::Backend>(terminal: &mut Terminal<B>) -> Result<(), fail
             .constraints([Constraint::Length(2); 4].as_ref())
             .split(f.size());
 
-        let mut gauge1 = Gauge::default()
-            // todo: put title to left of progress bar?
-            .block(Block::default().title("build 1"))
-            .label("doing ok")
-            .style(Style::default().fg(Color::Green).bg(Color::DarkGray))
-            .percent(25);
+        let mut gauge1 = build_gauge(build);
 
         f.render(&mut gauge1, chunks[0]);
     })?;
@@ -78,8 +88,16 @@ fn main() -> Result<(), failure::Error> {
         }
     });
 
+    let tc_token = env::var("TCUI_TC_TOKEN").expect("TCUI_TC_TOKEN is required");
+    let latest_build = download_build(
+        &tc_token,
+        "https://buildserver.red-gate.com",
+        "RedgateChangeControl_OverallBuild",
+        "add-beta-tag",
+    )?;
+
     loop {
-        draw(&mut terminal)?;
+        draw(&mut terminal, &latest_build)?;
         match receive_event.recv()? {
             Event::Input(event) => match event.code {
                 KeyCode::Char('q') => {
