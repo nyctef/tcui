@@ -32,12 +32,27 @@ enum Event<I> {
 }
 
 fn build_gauge(build: &Build) -> Gauge {
+    let build_type = match build {
+        Build::Queued { build_type, .. } => &build_type.name,
+        Build::Running { build_type, .. } => &build_type.name,
+        Build::Finished { build_type, .. } => &build_type.name,
+    };
+    let percent = match build {
+        Build::Queued { .. } => 0,
+        Build::Running { running_info, .. } => running_info.percentage_complete,
+        Build::Finished { .. } => 100,
+    };
+    let label = match build {
+        Build::Queued { .. } => "",
+        Build::Running { status_text, .. } => &status_text,
+        Build::Finished { status_text, .. } => &status_text,
+    };
     Gauge::default()
         // todo: put title to left of progress bar?
-        .block(Block::default().title("&build.build_type.name"))
-        .label("doing ok")
+        .block(Block::default().title(&build_type))
+        .label(label)
         .style(Style::default().fg(Color::Green).bg(Color::DarkGray))
-        .percent(25)
+        .percent(percent)
 }
 
 fn draw<B: tui::backend::Backend>(

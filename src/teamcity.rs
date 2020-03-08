@@ -46,7 +46,7 @@ pub enum Build {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RunningInfo {
-    pub percentage_complete: i32,
+    pub percentage_complete: u16,
     pub elapsed_seconds: i32,
     pub estimated_total_seconds: i32,
     pub outdated: bool,
