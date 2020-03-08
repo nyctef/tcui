@@ -1,7 +1,8 @@
+use failure::Fallible;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
-enum BuildStatus {
+pub enum BuildStatus {
     SUCCESS,
     FAILURE,
     ERROR,
@@ -9,7 +10,7 @@ enum BuildStatus {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
-enum BuildState {
+pub enum BuildState {
     Queued,
     Running,
     Finished,
@@ -17,7 +18,7 @@ enum BuildState {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Build {
+pub struct Build {
     number: String,
     status: BuildStatus,
     state: BuildState,
@@ -28,23 +29,46 @@ struct Build {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct BuildType {
+pub struct BuildType {
     name: String,
 }
 
 #[derive(Debug, Deserialize)]
-struct SnapshotDependencies {
+pub struct SnapshotDependencies {
     build: Vec<BuildDependency>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct BuildDependency {
+pub struct BuildDependency {
     number: String,
     status: BuildStatus,
     state: BuildState,
     percentage_complete: Option<i32>,
     web_url: String,
+}
+
+pub fn download_build(
+    api_token: &str,
+    api_root: &str,
+    build_type: &str,
+    branch: &str,
+) -> Fallible<Build> {
+    let url = format!("{api_root}/app/rest/builds/buildType:{build_type},defaultFilter:false,branch:name:{branch_name}", api_root = api_root, build_type = build_type, branch_name = branch);
+    // println!("Requesting url {}", url);
+    let response = ureq::get(&url)
+            .query("fields", "number,status,state,percentageComplete,webUrl,buildType(name),snapshot-dependencies(build(webUrl,number,status,state,percentageComplete,buildType(name)))")
+            .set(
+                "Authorization",
+                &format!("Bearer {tc_token}", tc_token = api_token),
+            )
+            .set("Accept", "application/json")
+            .call();
+    // println!("{}", response.status_line());
+    // println!("{:?}", response.into_string());
+    let json = response.into_json()?;
+    // println!("{:#?}", json);
+    Ok(serde_json::from_value::<Build>(json)?)
 }
 
 #[cfg(test)]
@@ -55,21 +79,12 @@ mod tests {
     #[test]
     fn can_poke_tc_api() {
         let tc_token = env::var("TCUI_TC_TOKEN").expect("TCUI_TC_TOKEN is required");
-        let url = format!("{tcRoot}/app/rest/builds/buildType:{buildType},defaultFilter:false,branch:name:{branchName}", tcRoot="https://buildserver.red-gate.com", buildType="RedgateChangeControl_OverallBuild", branchName="add-beta-tag");
-        // println!("Requesting url {}", url);
-        let response = ureq::get(&url)
-            .query("fields", "number,status,state,percentageComplete,webUrl,buildType(name),snapshot-dependencies(build(webUrl,number,status,state,percentageComplete,buildType(name)))")
-            .set(
-                "Authorization",
-                &format!("Bearer {tc_token}", tc_token = tc_token),
-            )
-            .set("Accept", "application/json")
-            .call();
-        // println!("{}", response.status_line());
-        // println!("{:?}", response.into_string());
-        let json = response.into_json().unwrap();
-        // println!("{:#?}", json);
-        let latest_build = serde_json::from_value::<Build>(json).unwrap();
+        let latest_build = download_build(
+            &tc_token,
+            "https://buildserver.red-gate.com",
+            "RedgateChangeControl_OverallBuild",
+            "add-beta-tag",
+        );
         println!("{:#?}", latest_build);
     }
 }
