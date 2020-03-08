@@ -13,9 +13,13 @@ use std::{
 };
 use tui::{
     backend::CrosstermBackend,
-    layout::Constraint,
-    style::{Color, Style},
-    widgets::{Block, Borders, Row, Table},
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Modifier, Style},
+    symbols::{
+        block::{FULL, HALF},
+        DOT,
+    },
+    widgets::{Block, Borders, Gauge, Row, Table},
     Terminal,
 };
 
@@ -26,19 +30,20 @@ enum Event<I> {
 
 fn draw<B: tui::backend::Backend>(terminal: &mut Terminal<B>) -> Result<(), failure::Error> {
     terminal.draw(|mut f| {
-        let header = ["Header1", "Header2", "Header3"].into_iter();
-        let rows = vec![Row::Data(["Row11", "Row12", "Row13"].into_iter())].into_iter();
-        let mut table = Table::new(header, rows)
-            .block(Block::default().title("Test block 2").borders(Borders::ALL))
-            .header_style(Style::default().fg(Color::Yellow))
-            .widths(&[
-                Constraint::Length(5),
-                Constraint::Length(5),
-                Constraint::Length(10),
-            ])
-            .style(Style::default().fg(Color::White))
-            .column_spacing(1);
-        f.render(&mut table, f.size());
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(2)
+            .constraints([Constraint::Length(2); 4].as_ref())
+            .split(f.size());
+
+        let mut gauge1 = Gauge::default()
+            // todo: put title to left of progress bar?
+            .block(Block::default().title("build 1"))
+            .label("doing ok")
+            .style(Style::default().fg(Color::Green).bg(Color::DarkGray))
+            .percent(25);
+
+        f.render(&mut gauge1, chunks[0]);
     })?;
 
     Ok(())
