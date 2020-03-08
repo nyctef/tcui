@@ -10,6 +10,7 @@ use crossterm::{
 use std::{
     env,
     io::{stdout, Write},
+    iter,
     sync::mpsc,
     thread,
     time::Duration,
@@ -28,6 +29,7 @@ enum Event<I> {
 }
 
 fn build_gauge(build: &Build) -> Gauge {
+    // TODO: probably want to collect these into an object of some sort?
     let build_type = match build {
         Build::Queued { build_type, .. } => &build_type.name,
         Build::Running { build_type, .. } => &build_type.name,
@@ -51,20 +53,55 @@ fn build_gauge(build: &Build) -> Gauge {
         .percent(percent)
 }
 
+fn n_lines(size: usize) -> Vec<Constraint> {
+    iter::repeat(Constraint::Length(2)).take(size).collect()
+}
+
+static EMPTY_BUILD_LIST: Vec<Build> = Vec::new();
+
+fn dependencies(build: &Build) -> &[Build] {
+    let snapshot_dependencies = match build {
+        Build::Queued {
+            snapshot_dependencies,
+            ..
+        } => snapshot_dependencies,
+        Build::Running {
+            snapshot_dependencies,
+            ..
+        } => snapshot_dependencies,
+        Build::Finished {
+            snapshot_dependencies,
+            ..
+        } => snapshot_dependencies,
+    };
+
+    snapshot_dependencies
+        .as_ref()
+        .map(|x| &x.build)
+        // TODO: is there a way to hand out an empty slice here without the global variable?
+        .unwrap_or(&EMPTY_BUILD_LIST)
+}
+
 fn draw<B: tui::backend::Backend>(
     terminal: &mut Terminal<B>,
     build: &Build,
 ) -> Result<(), failure::Error> {
     terminal.draw(|mut f| {
+        let deps = dependencies(build);
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
-            .constraints([Constraint::Length(2); 4].as_ref())
+            // +2: +1 for top build and +1 for empty space at bottom
+            .constraints(n_lines(deps.len() + 2).as_ref())
             .split(f.size());
 
         let mut gauge1 = build_gauge(build);
-
         f.render(&mut gauge1, chunks[0]);
+
+        for (i, dep_build) in deps.iter().enumerate() {
+            let mut dep_gauge = build_gauge(dep_build);
+            f.render(&mut dep_gauge, chunks[i + 1]);
+        }
     })?;
 
     Ok(())
