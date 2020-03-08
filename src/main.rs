@@ -17,12 +17,8 @@ use std::{
 use tui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    symbols::{
-        block::{FULL, HALF},
-        DOT,
-    },
-    widgets::{Block, Borders, Gauge, Row, Table},
+    style::{Color, Style},
+    widgets::{Block, Gauge},
     Terminal,
 };
 
