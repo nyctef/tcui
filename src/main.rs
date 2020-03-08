@@ -29,17 +29,16 @@ enum Event<I> {
 }
 
 fn build_gauge(build: &Build) -> Gauge {
-    // TODO: probably want to collect these into an object of some sort?
-    let build_type = match build {
-        Build::Queued { build_type, .. } => &build_type.name,
-        Build::Running { build_type, .. } => &build_type.name,
-        Build::Finished { build_type, .. } => &build_type.name,
+    let (build_type, percent) = match build {
+        Build::Queued { build_type, .. } => (&build_type.name, 0),
+        Build::Running {
+            build_type,
+            running_info,
+            ..
+        } => (&build_type.name, running_info.percentage_complete),
+        Build::Finished { build_type, .. } => (&build_type.name, 100),
     };
-    let percent = match build {
-        Build::Queued { .. } => 0,
-        Build::Running { running_info, .. } => running_info.percentage_complete,
-        Build::Finished { .. } => 100,
-    };
+    // TODO: figure out why this breaks if we try to merge it into the above tuple
     let label = match build {
         Build::Queued { .. } => "",
         Build::Running { status_text, .. } => &status_text,
