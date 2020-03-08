@@ -34,7 +34,7 @@ enum Event<I> {
 fn build_gauge(build: &Build) -> Gauge {
     Gauge::default()
         // todo: put title to left of progress bar?
-        .block(Block::default().title(&build.build_type.name))
+        .block(Block::default().title("&build.build_type.name"))
         .label("doing ok")
         .style(Style::default().fg(Color::Green).bg(Color::DarkGray))
         .percent(25)

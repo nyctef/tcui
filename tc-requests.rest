@@ -1,11 +1,17 @@
-GET https://buildserver.red-gate.com/app/rest/builds/buildType:RedgateChangeControl_OverallBuild,defaultFilter:false,branch:name:add-beta-tag
-    ?fields=number,status,state,percentageComplete,webUrl,buildType(name),snapshot-dependencies(build(webUrl,number,status,state,percentageComplete,buildType(name)))
+GET https://buildserver.red-gate.com/app/rest/builds/buildType:RedgateChangeControl_OverallBuild,defaultFilter:false,branch:name:master
+    ?fields=number,status,state,statusText,webUrl,buildType(name),running-info(percentageComplete,elapsedSeconds,estimatedTotalSeconds,outdated,probablyHanging),snapshot-dependencies(build(number,status,state,statusText,webUrl,buildType(name),running-info(percentageComplete,elapsedSeconds,estimatedTotalSeconds,outdated,probablyHanging)))
 Authorization: Bearer {{TEAMCITY_ACCESS_TOKEN}}
 Accept: application/json
 ###
 
-GET https://buildserver.red-gate.com/app/rest/builds/11896581
-    ?fields=number,status,state,percentageComplete,webUrl,buildType(name),snapshot-dependencies(build(webUrl,number,status,state,percentageComplete,buildType(name)))
+GET https://buildserver.red-gate.com/app/rest/builds/11904740
+    #?fields=number,status,state,percentageComplete,webUrl,buildType(name),snapshot-dependencies(build(webUrl,number,status,state,percentageComplete,buildType(name)))
+Authorization: Bearer {{TEAMCITY_ACCESS_TOKEN}}
+Accept: application/json
+
+###
+GET https://buildserver.red-gate.com/app/rest/builds/11904729
+    #?fields=number,status,state,percentageComplete,webUrl,buildType(name),snapshot-dependencies(build(webUrl,number,status,state,percentageComplete,buildType(name)))
 Authorization: Bearer {{TEAMCITY_ACCESS_TOKEN}}
 Accept: application/json
 

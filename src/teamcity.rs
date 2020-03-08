@@ -1,5 +1,6 @@
 use failure::Fallible;
 use serde::Deserialize;
+use serde_json::value::Value;
 
 #[derive(Debug, Deserialize)]
 pub enum BuildStatus {
@@ -9,23 +10,47 @@ pub enum BuildStatus {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum BuildState {
-    Queued,
-    Running,
-    Finished,
+#[serde(rename_all = "camelCase", tag = "state")]
+pub enum Build {
+    #[serde(rename_all = "camelCase")]
+    Queued {
+        build_type: BuildType,
+        web_url: String,
+        #[serde(rename = "snapshot-dependencies")]
+        snapshot_dependencies: Option<SnapshotDependencies>,
+    },
+    #[serde(rename_all = "camelCase")]
+    Running {
+        build_type: BuildType,
+        number: String,
+        status: BuildStatus,
+        status_text: String,
+        web_url: String,
+        #[serde(rename = "running-info")]
+        running_info: RunningInfo,
+        #[serde(rename = "snapshot-dependencies")]
+        snapshot_dependencies: Option<SnapshotDependencies>,
+    },
+    #[serde(rename_all = "camelCase")]
+    Finished {
+        build_type: BuildType,
+        number: String,
+        status: BuildStatus,
+        status_text: String,
+        web_url: String,
+        #[serde(rename = "snapshot-dependencies")]
+        snapshot_dependencies: Option<SnapshotDependencies>,
+    },
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Build {
-    pub build_type: BuildType,
-    pub number: String,
-    pub status: BuildStatus,
-    pub state: BuildState,
-    pub web_url: String,
-    #[serde(rename = "snapshot-dependencies")]
-    pub snapshot_dependencies: Option<SnapshotDependencies>,
+pub struct RunningInfo {
+    pub percentage_complete: i32,
+    pub elapsed_seconds: i32,
+    pub estimated_total_seconds: i32,
+    pub outdated: bool,
+    pub probably_hanging: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -47,17 +72,31 @@ pub fn download_build(
 ) -> Fallible<Build> {
     let url = format!("{api_root}/app/rest/builds/buildType:{build_type},defaultFilter:false,branch:name:{branch_name}", api_root = api_root, build_type = build_type, branch_name = branch);
     // println!("Requesting url {}", url);
+    let build_fields = "number,status,state,statusText,webUrl,buildType(name),running-info(percentageComplete,elapsedSeconds,estimatedTotalSeconds,outdated,probablyHanging)";
     let response = ureq::get(&url)
-            .query("fields", "number,status,state,percentageComplete,webUrl,buildType(name),snapshot-dependencies(build(webUrl,number,status,state,percentageComplete,buildType(name)))")
-            .set(
-                "Authorization",
-                &format!("Bearer {tc_token}", tc_token = api_token),
-            )
-            .set("Accept", "application/json")
-            .call();
+        .query(
+            "fields",
+            &format!(
+                "{},snapshot-dependencies(build({}))",
+                build_fields, build_fields
+            ),
+        )
+        .set(
+            "Authorization",
+            &format!("Bearer {tc_token}", tc_token = api_token),
+        )
+        .set("Accept", "application/json")
+        .call();
     // println!("{}", response.status_line());
     // println!("{:?}", response.into_string());
     let json = response.into_json()?;
+
+    if let Value::Object(obj) = &json {
+        if obj.is_empty() {
+            // TODO: figure out how to return an error here
+            panic!("teamcity returned an empty json object (build not found?)");
+        }
+    }
     // println!("{:#?}", json);
     Ok(serde_json::from_value::<Build>(json)?)
 }
@@ -74,7 +113,7 @@ mod tests {
             &tc_token,
             "https://buildserver.red-gate.com",
             "RedgateChangeControl_OverallBuild",
-            "add-beta-tag",
+            "master",
         );
         println!("{:#?}", latest_build);
     }
