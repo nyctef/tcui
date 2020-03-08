@@ -25,7 +25,7 @@ pub struct Build {
     pub state: BuildState,
     pub web_url: String,
     #[serde(rename = "snapshot-dependencies")]
-    pub snapshot_dependencies: SnapshotDependencies,
+    pub snapshot_dependencies: Option<SnapshotDependencies>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -36,18 +36,7 @@ pub struct BuildType {
 
 #[derive(Debug, Deserialize)]
 pub struct SnapshotDependencies {
-    pub build: Vec<BuildDependency>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BuildDependency {
-    pub build_type: BuildType,
-    pub number: String,
-    pub status: BuildStatus,
-    pub state: BuildState,
-    pub percentage_complete: Option<i32>,
-    pub web_url: String,
+    pub build: Vec<Build>,
 }
 
 pub fn download_build(
