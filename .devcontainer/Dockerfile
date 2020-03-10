@@ -28,8 +28,8 @@ RUN apt-get update \
     && apt-get install -y mingw-w64 \
     && rustup target add x86_64-pc-windows-gnu \
     # workaround for https://github.com/rust-lang/rust/issues/49078
-    && cp /usr/x86_64-w64-mingw32/lib/crt2.o /usr/local/rustup/toolchains/1.40.0-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/ \
-    && cp /usr/x86_64-w64-mingw32/lib/dllcrt2.o /usr/local/rustup/toolchains/1.40.0-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/ \
+    && cp /usr/x86_64-w64-mingw32/lib/crt2.o /usr/local/rustup/toolchains/*/lib/rustlib/x86_64-pc-windows-gnu/lib/ \
+    && cp /usr/x86_64-w64-mingw32/lib/dllcrt2.o /usr/local/rustup/toolchains/*/lib/rustlib/x86_64-pc-windows-gnu/lib/ \
     # Clean up
     && apt-get autoremove -y \
     && apt-get clean -y \
