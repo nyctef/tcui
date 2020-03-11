@@ -115,6 +115,6 @@ mod tests {
             "RedgateChangeControl_OverallBuild",
             "master",
         );
-        println!("{:#?}", latest_build);
+        dbg!(latest_build.unwrap());
     }
 }
