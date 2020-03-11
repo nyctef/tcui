@@ -1,6 +1,8 @@
 mod teamcity;
-
 use teamcity::{download_build, Build};
+
+mod git;
+use git::get_current_branch;
 
 use crossterm::{
     event::{self, Event as CEvent, KeyCode},
@@ -135,12 +137,14 @@ fn main() -> Result<(), failure::Error> {
         }
     });
 
+    let branch = get_current_branch()?;
+
     let tc_token = env::var("TCUI_TC_TOKEN").expect("TCUI_TC_TOKEN is required");
     let latest_build = download_build(
         &tc_token,
         "https://buildserver.red-gate.com",
         "RedgateChangeControl_OverallBuild",
-        "add-beta-tag",
+        &branch,
     )?;
 
     loop {
