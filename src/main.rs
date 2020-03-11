@@ -152,9 +152,6 @@ fn main() -> Result<(), failure::Error> {
         match receive_event.recv()? {
             Event::Input(event) => match event.code {
                 KeyCode::Char('q') => {
-                    disable_raw_mode()?;
-                    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-                    terminal.show_cursor()?;
                     break;
                 }
                 // KeyCode::Char(c) => app.on_key(c),
@@ -170,5 +167,8 @@ fn main() -> Result<(), failure::Error> {
         }
     }
 
+    disable_raw_mode()?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    terminal.show_cursor()?;
     Ok(())
 }
