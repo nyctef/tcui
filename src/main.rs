@@ -1,5 +1,5 @@
 mod teamcity;
-use teamcity::{download_build, Build};
+use teamcity::{download_build, Build, BuildStatus};
 
 mod git;
 use git::get_current_branch;
@@ -32,14 +32,17 @@ enum Event<I> {
 }
 
 fn build_gauge(build: &Build) -> Gauge {
-    let (build_type, percent) = match build {
-        Build::Queued { build_type, .. } => (&build_type.name, 0),
+    let (build_type, percent, status) = match build {
+        Build::Queued { build_type, .. } => (&build_type.name, 0, &BuildStatus::SUCCESS),
         Build::Running {
             build_type,
             running_info,
+            status,
             ..
-        } => (&build_type.name, running_info.percentage_complete),
-        Build::Finished { build_type, .. } => (&build_type.name, 100),
+        } => (&build_type.name, running_info.percentage_complete, status),
+        Build::Finished {
+            build_type, status, ..
+        } => (&build_type.name, 100, status),
     };
     // TODO: figure out why this breaks if we try to merge it into the above tuple
     let label = match build {
@@ -47,11 +50,16 @@ fn build_gauge(build: &Build) -> Gauge {
         Build::Running { status_text, .. } => &status_text,
         Build::Finished { status_text, .. } => &status_text,
     };
+    let color = match status {
+        BuildStatus::ERROR => Color::Red,
+        BuildStatus::FAILURE => Color::Red,
+        BuildStatus::SUCCESS => Color::Green,
+    };
     Gauge::default()
         // todo: put title to left of progress bar?
         .block(Block::default().title(&build_type))
         .label(label)
-        .style(Style::default().fg(Color::Green).bg(Color::DarkGray))
+        .style(Style::default().fg(color).bg(Color::DarkGray))
         .percent(percent)
 }
 
