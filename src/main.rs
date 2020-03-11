@@ -27,6 +27,7 @@ use tui::{
 
 enum Event<I> {
     Input(I),
+    NewBuild(Build),
     Tick,
 }
 
@@ -121,8 +122,30 @@ fn main() -> Result<(), failure::Error> {
     terminal.hide_cursor()?;
 
     let (transmit_event, receive_event) = mpsc::channel();
+    let tc_transmit = transmit_event.clone();
 
+    // TODO: we're creating _2 copies of these variables to pass them into threads
+    // is there a better way to do this?
+    let branch = get_current_branch()?;
+    let branch_2 = branch.clone();
+
+    let tc_token = env::var("TCUI_TC_TOKEN").expect("TCUI_TC_TOKEN is required");
+    let tc_token_2 = tc_token.clone();
     let tick_rate = 250;
+
+    thread::spawn(move || loop {
+        thread::sleep(Duration::from_secs(10));
+        let build = download_build(
+            &tc_token,
+            "https://buildserver.red-gate.com",
+            "RedgateChangeControl_OverallBuild",
+            &branch,
+        );
+        build
+            .and_then(|b| Ok(tc_transmit.send(Event::NewBuild(b))?))
+            // TODO: is this how to do error handling here?
+            .unwrap_or_else(|e| eprintln!("{:?}", e));
+    });
 
     thread::spawn(move || {
         loop {
@@ -137,14 +160,11 @@ fn main() -> Result<(), failure::Error> {
         }
     });
 
-    let branch = get_current_branch()?;
-
-    let tc_token = env::var("TCUI_TC_TOKEN").expect("TCUI_TC_TOKEN is required");
-    let latest_build = download_build(
-        &tc_token,
+    let mut latest_build = download_build(
+        &tc_token_2,
         "https://buildserver.red-gate.com",
         "RedgateChangeControl_OverallBuild",
-        &branch,
+        &branch_2,
     )?;
 
     loop {
@@ -161,6 +181,9 @@ fn main() -> Result<(), failure::Error> {
                 // KeyCode::Down => app.on_down(),
                 _ => {}
             },
+            Event::NewBuild(build) => {
+                latest_build = build;
+            }
             Event::Tick => {
                 // app.on_tick();
             }
