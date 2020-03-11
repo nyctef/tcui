@@ -128,6 +128,7 @@ fn main() -> Result<(), failure::Error> {
     let mut terminal = Terminal::new(backend)?;
 
     terminal.hide_cursor()?;
+    terminal.clear()?;
 
     let (transmit_event, receive_event) = mpsc::channel();
     let tc_transmit = transmit_event.clone();
