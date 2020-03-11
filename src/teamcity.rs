@@ -1,4 +1,4 @@
-use failure::Fallible;
+use failure::{bail, Fallible};
 use serde::Deserialize;
 use serde_json::value::Value;
 
@@ -93,8 +93,7 @@ pub fn download_build(
 
     if let Value::Object(obj) = &json {
         if obj.is_empty() {
-            // TODO: figure out how to return an error here
-            panic!("teamcity returned an empty json object (build not found?)");
+            bail!("teamcity returned an empty json object (build not found?)");
         }
     }
     // println!("{:#?}", json);
