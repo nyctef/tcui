@@ -1,7 +1,7 @@
 use failure::{bail, Fallible};
 use serde::Deserialize;
 use serde_json::value::Value;
-use base64::{encode_config, URL_SAFE};
+use base64::URL_SAFE;
 
 #[derive(Debug, Deserialize)]
 pub enum BuildStatus {
