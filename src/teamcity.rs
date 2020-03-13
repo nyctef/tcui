@@ -87,6 +87,12 @@ pub fn download_build(
         )
         .set("Accept", "application/json")
         .call();
+
+    if !response.ok() {
+        let status_str = response.status_line().to_owned();
+        let body = response.into_string();
+        bail!("teamcity unhappy: {:?}\n{:?}", status_str, body);
+    }
     // println!("{}", response.status_line());
     // println!("{:?}", response.into_string());
     let json = response.into_json()?;
