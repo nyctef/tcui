@@ -15,5 +15,5 @@ pub fn get_current_branch() -> Fallible<String> {
         ));
     }
 
-    Ok(from_utf8(&output.stdout)?.into())
+    Ok(from_utf8(&output.stdout)?.trim().into())
 }
