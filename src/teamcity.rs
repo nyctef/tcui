@@ -1,6 +1,7 @@
 use failure::{bail, Fallible};
 use serde::Deserialize;
 use serde_json::value::Value;
+use base64::{encode_config, URL_SAFE};
 
 #[derive(Debug, Deserialize)]
 pub enum BuildStatus {
@@ -70,7 +71,12 @@ pub fn download_build(
     build_type: &str,
     branch: &str,
 ) -> Fallible<Build> {
-    let url = format!("{api_root}/app/rest/builds/buildType:{build_type},defaultFilter:false,branch:name:{branch_name}", api_root = api_root, build_type = build_type, branch_name = branch);
+    let url = format!(
+        "{api_root}/app/rest/builds/buildType:{build_type},defaultFilter:false,branch:name:{branch_name}",
+        api_root = api_root,
+        build_type = build_type,
+        branch_name = format!("($base64:{})", base64::encode_config(branch, URL_SAFE))
+    );
     // println!("Requesting url {}", url);
     let build_fields = "number,status,state,statusText,webUrl,buildType(name),running-info(percentageComplete,elapsedSeconds,estimatedTotalSeconds,outdated,probablyHanging)";
     let response = ureq::get(&url)
